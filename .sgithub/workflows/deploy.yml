@@ -1,0 +1,38 @@
+name: Deploy DemoApi en AWS EC2
+
+on:
+  push:
+    branches:
+      - main  
+
+jobs:
+  deploy:
+    runs-on: windows-2016
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Configurar .NET Framework 4.8
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Restaurar paquetes NuGet
+        run: nuget restore "DemoApi.sln"
+
+      - name: Compilar la solución
+        run: msbuild "DemoApi.sln" /p:Configuration=Release /p:Platform="Any CPU"
+
+      - name: Publicar aplicación
+        run: |
+          mkdir deploy
+          xcopy /E /I /Y /Q "DemoApi\bin\Release\*" deploy\
+
+      - name: Instalar SSHPass
+        run: choco install sshpass -y
+
+      - name: Transferir archivos a EC2 con usuario y contraseña
+        run: |
+          sshpass -p "${{ secrets.EC2_PASSWORD }}" scp -r -o StrictHostKeyChecking=no deploy/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:"C:/inetpub/wwwroot/DemoApi"
+
+      - name: Reiniciar IIS en EC2
+        run: sshpass -p "${{ secrets.EC2_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "iisreset"
