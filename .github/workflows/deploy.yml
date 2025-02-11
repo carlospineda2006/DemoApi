@@ -22,10 +22,13 @@ jobs:
       - name: Compilar la solución
         run: msbuild DemoApi.sln /p:Configuration=Release /p:Platform="Any CPU"
 
+      - name: Verificar archivos generados
+        run: dir DemoApi\bin\Release\
+
       - name: Publicar aplicación
         run: |
           mkdir deploy
-          xcopy /E /I /Y /Q bin\Release\* deploy\
+          copy /Y /Q DemoApi\bin\Release\* deploy\
 
       - name: Transferir archivos a EC2
         uses: appleboy/scp-action@master
