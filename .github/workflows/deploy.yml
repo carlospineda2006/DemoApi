@@ -1,13 +1,13 @@
-name: Deploy DemoApi en AWS EC2
+name: Deploy .NET Framework to AWS EC2
 
 on:
   push:
     branches:
-      - master  
+      - master  # O la rama que uses para despliegues
 
 jobs:
-  deploy:
-    runs-on: windows-2016
+  build:
+    runs-on: windows-2019
 
     steps:
       - name: Checkout código
@@ -17,22 +17,29 @@ jobs:
         uses: microsoft/setup-msbuild@v1
 
       - name: Restaurar paquetes NuGet
-        run: nuget restore "DemoApi.sln"
+        run: nuget restore DemoApi.sln
 
       - name: Compilar la solución
-        run: msbuild "DemoApi.sln" /p:Configuration=Release /p:Platform="Any CPU"
+        run: msbuild DemoApi.sln /p:Configuration=Release /p:Platform="Any CPU"
 
       - name: Publicar aplicación
         run: |
           mkdir deploy
-          xcopy /E /I /Y /Q "DemoApi\bin\Release\*" deploy\
+          xcopy /E /I /Y /Q DemoApi\DemoaApi\bin\Release\* deploy\
 
-      - name: Instalar SSHPass
-        run: choco install sshpass -y
+      - name: Transferir archivos a EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          password: ${{ secrets.EC2_PASSWORD }}
+          source: "deploy/*"
+          target: "C:/inetpub/wwwroot/DemoApi"
 
-      - name: Transferir archivos a EC2 con usuario y contraseña
-        run: |
-          sshpass -p "${{ secrets.EC2_PASSWORD }}" scp -r -o StrictHostKeyChecking=no deploy/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:"C:/inetpub/wwwroot/DemoApi"
-
-      - name: Reiniciar IIS en EC2
-        run: sshpass -p "${{ secrets.EC2_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "iisreset"
+      - name: Reiniciar IIS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          password: ${{ secrets.EC2_PASSWORD }}
+          script: iisreset
