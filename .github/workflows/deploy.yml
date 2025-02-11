@@ -3,7 +3,7 @@ name: Deploy .NET Framework to AWS EC2
 on:
   push:
     branches:
-      - master  # O la rama que uses para despliegues
+      - master 
 
 jobs:
   build:
