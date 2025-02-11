@@ -3,7 +3,7 @@ name: Deploy .NET Framework to AWS EC2
 on:
   push:
     branches:
-      - master 
+      - master
 
 jobs:
   build:
@@ -25,7 +25,7 @@ jobs:
       - name: Publicar aplicación
         run: |
           mkdir deploy
-          xcopy /E /I /Y /Q DemoaApi\bin\Release\* deploy\
+          xcopy /E /I /Y /Q DemoApi\bin\Release\* deploy\
 
       - name: Transferir archivos a EC2
         uses: appleboy/scp-action@master
