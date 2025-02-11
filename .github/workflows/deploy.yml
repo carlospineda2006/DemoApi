@@ -17,7 +17,7 @@ jobs:
         uses: microsoft/setup-msbuild@v1
 
       - name: Restaurar paquetes NuGet
-        run: nuget restore TuProyecto.sln
+        run: nuget restore DemoApi.sln
 
       - name: Compilar la solución
         run: msbuild DemoApi.sln /p:Configuration=Release /p:Platform="Any CPU"
