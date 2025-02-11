@@ -20,7 +20,8 @@ jobs:
         run: nuget restore DemoApi.sln
 
       - name: Compilar la solución
-        run: msbuild DemoApi.sln /p:Configuration=Release /p:Platform="Any CPU"
+        run: msbuild DemoApi.sln /p:Configuration=Release /p:Platform="Any CPU" /p:OutputPath=D:\a\DemoApi\DemoApi\bin\Release\
+
 
       - name: Verificar archivos generados
         run: dir DemoApi\bin\Release\
