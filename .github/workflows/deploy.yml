@@ -30,10 +30,10 @@ jobs:
           mkdir deploy
           Copy-Item -Path "DemoApi\bin\Release\*" -Destination "deploy\" -Recurse -Force
 
-          - name: Transferir archivos a EC2 usando SCP
-          shell: powershell
-          run: |
-            scp -o StrictHostKeyChecking=no -r deploy/* ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/C:/inetpub/wwwroot/DemoApi
+      - name: Transferir archivos a EC2 usando SCP
+        shell: powershell
+        run: |
+          scp -o StrictHostKeyChecking=no -r deploy/* ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/C:/inetpub/wwwroot/DemoApi
   
 
 
