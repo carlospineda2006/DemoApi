@@ -25,7 +25,7 @@ jobs:
       - name: Publicar aplicación
         run: |
           mkdir deploy
-          copy /Y /Q DemoApi\bin\Release\* deploy\
+          Copy-Item -Path "DemoApi\bin\Release\*" -Destination "deploy\" -Recurse -Force
 
       - name: Transferir archivos a EC2
         uses: appleboy/scp-action@master
