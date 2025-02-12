@@ -29,13 +29,18 @@ jobs:
         run: |
           mkdir deploy
           Copy-Item -Path "DemoApi\bin\Release\*" -Destination "deploy\" -Recurse -Force
-
+          
+      - name: Configurar clave privada SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          
       - name: Transferir archivos a EC2 usando SCP
         shell: powershell
         run: |
           Write-Host "Usuario: ${{ secrets.EC2_USERNAME }}"
-          Write-Host "Contraseña: ${{ secrets.EC2_PASSWORD }}"
-          scp -o StrictHostKeyChecking=no -r deploy/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/C:/inetpub/wwwroot/DemoApi
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r deploy/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/C:/inetpub/wwwroot/DemoApi
 
       - name: Reiniciar IIS
         uses: appleboy/ssh-action@master
