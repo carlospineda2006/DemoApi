@@ -44,17 +44,12 @@ jobs:
 
       - name: Transferir archivos a S3
         run: |
-          if (Test-Path publish) {
             aws s3 cp publish/ s3://demo-api-deploy --recursive
-          } else {
-            Write-Error "El directorio publish no existe"
-            exit 1
-          }
-
+ 
       - name: Ejecutar comando en EC2 vía SSM
         run: |
           aws ssm send-command `
-            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" `
+            --instance-ids "i-0e38624bf58cdf959" `
             --document-name "AWS-RunPowerShellScript" `
             --parameters commands=["aws s3 cp s3://demo-api-deploy/ C:\inetpub\wwwroot\DemoApi\ --recursive"] `
             --output text
