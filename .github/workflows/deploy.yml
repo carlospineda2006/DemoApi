@@ -30,11 +30,19 @@ jobs:
           mkdir deploy
           Copy-Item -Path "DemoApi\bin\Release\*" -Destination "deploy\" -Recurse -Force
 
-      - name: Transferir archivos a EC2 usando SCP
+      - name: Instalar PuTTY (psftp.exe)
+        run: |
+          Invoke-WebRequest -Uri "https://the.earth.li/~sgtatham/putty/latest/w64/psftp.exe" -OutFile "C:\Windows\System32\psftp.exe"
+
+      - name: Transferir archivos a EC2 usando SFTP
         shell: powershell
         run: |
-          scp -o StrictHostKeyChecking=no -r deploy/* ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/C:/inetpub/wwwroot/DemoApi
-  
+          echo "lcd deploy" > sftp_commands.txt
+          echo "cd /C:/inetpub/wwwroot/DemoApi" >> sftp_commands.txt
+          echo "mput *" >> sftp_commands.txt
+          echo "bye" >> sftp_commands.txt
+
+          psftp -batch -l ${{ secrets.EC2_USER }} -pw ${{ secrets.EC2_PASSWORD }} ${{ secrets.EC2_HOST }} -b sftp_commands.txt
 
 
       - name: Reiniciar IIS
