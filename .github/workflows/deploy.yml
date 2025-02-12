@@ -43,7 +43,7 @@ jobs:
       - name: Descargar archivos desde S3 a EC2
         run: |
           aws s3 cp s3://demo-api-deploy/ C:\inetpub\wwwroot\DemoApi\ --recursive
-        shell: powershell
+        
 
       - name: Reiniciar IIS
         uses: appleboy/ssh-action@master
