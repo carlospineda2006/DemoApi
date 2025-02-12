@@ -35,12 +35,15 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          cat ~/.ssh/id_rsa # Para verificar que la clave se configuró correctamente
+
           
       - name: Transferir archivos a EC2 usando SCP
         shell: powershell
         run: |
           Write-Host "Usuario: ${{ secrets.EC2_USERNAME }}"
-          scp -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r deploy/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/C:/inetpub/wwwroot/DemoApi
+          scp -v -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa -r deploy/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/C:/inetpub/wwwroot/DemoApi
+
 
       - name: Reiniciar IIS
         uses: appleboy/ssh-action@master
