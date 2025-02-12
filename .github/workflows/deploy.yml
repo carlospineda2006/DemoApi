@@ -33,7 +33,30 @@ jobs:
       - name: Instalar PuTTY (psftp.exe)
         run: |
           Invoke-WebRequest -Uri "https://the.earth.li/~sgtatham/putty/latest/w64/psftp.exe" -OutFile "C:\Windows\System32\psftp.exe"
-    
+          
+      - name: Agregar clave del servidor a known_hosts
+        shell: powershell
+        run: |
+          # Asegurarnos de que USERPROFILE esté definido
+          if (-not $env:USERPROFILE) {
+              Write-Error "USERPROFILE no está definido. Verifica el entorno."
+              exit 1
+          }
+
+          $SSH_DIR = "$env:USERPROFILE\.ssh"
+          $KNOWN_HOSTS_FILE = "$SSH_DIR\known_hosts"
+          $EC2_HOST = "${{ secrets.EC2_HOST }}"
+          
+          # Crear carpeta .ssh si no existe
+          if (!(Test-Path $SSH_DIR)) {
+              Write-Host "Creando directorio: $SSH_DIR"
+              New-Item -ItemType Directory -Path $SSH_DIR | Out-Null
+          }
+
+          # Obtener clave del servidor y agregarla a known_hosts
+          Write-Host "Agregando clave de host de $EC2_HOST a known_hosts"
+          ssh-keyscan -t ed25519 $EC2_HOST | Out-File -Encoding ASCII -FilePath $KNOWN_HOSTS_FILE
+
       - name: Transferir archivos a EC2 usando SFTP
         shell: powershell
         run: |
