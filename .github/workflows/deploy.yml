@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: windows-2019
-
     steps:
       - name: Checkout código
         uses: actions/checkout@v3
@@ -19,17 +18,22 @@ jobs:
       - name: Restaurar paquetes NuGet
         run: nuget restore DemoApi.sln
 
-      - name: Compilar la solución
-        run: msbuild DemoApi.sln /p:Configuration=Release /p:Platform="Any CPU" /v:diagnostic
-
-      - name: Verificar archivos generados
-        run: dir DemoApi\bin\Release\
-
-      - name: Publicar aplicación
+      - name: Publicar Web App
         run: |
-          mkdir deploy
-          Copy-Item -Path "DemoApi\bin\Release\*" -Destination "deploy\" -Recurse -Force
-      
+          msbuild DemoApi.sln `
+          /p:Configuration=Release `
+          /p:Platform="Any CPU" `
+          /p:DeployOnBuild=true `
+          /p:WebPublishMethod=FileSystem `
+          /p:PublishProfile=FolderProfile `
+          /t:WebPublish `
+          /p:publishUrl="bin\Release\app.publish"
+
+      - name: Listar contenido del directorio de publicación
+        run: |
+          Write-Host "Contenido del directorio de publicación:"
+          Get-ChildItem -Path "DemoApi\bin\Release\app.publish" -Recurse
+
       - name: Configurar AWS CLI
         run: |
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -38,17 +42,12 @@ jobs:
 
       - name: Transferir archivos a S3
         run: |
-          aws s3 cp deploy/ s3://demo-api-deploy --recursive
-          
-      - name: Descargar archivos desde S3 a EC2
+          aws s3 cp "DemoApi\bin\Release\app.publish\" s3://demo-api-deploy --recursive
+ 
+      - name: Ejecutar comando en EC2 vía SSM
         run: |
-          aws s3 cp s3://demo-api-deploy/ C:\inetpub\wwwroot\DemoApi\ --recursive --debug
-        
-
-      - name: Reiniciar IIS
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          password: ${{ secrets.EC2_PASSWORD }}
-          script: iisreset
+          aws ssm send-command `
+            --instance-ids "i-0e38624bf58cdf959" `
+            --document-name "AWS-RunPowerShellScript" `
+            --parameters commands=["aws s3 cp s3://demo-api-deploy/ C:\inetpub\wwwroot\DemoApi\ --recursive"] `
+            --output text
