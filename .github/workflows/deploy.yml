@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: windows-2019
-
     steps:
       - name: Checkout código
         uses: actions/checkout@v3
@@ -18,9 +17,6 @@ jobs:
 
       - name: Restaurar paquetes NuGet
         run: nuget restore DemoApi.sln
-
-      - name: Compilar la solución
-        run: msbuild DemoApi.sln /p:Configuration=Release /p:Platform="Any CPU" /v:diagnostic
 
       - name: Crear directorio de publicación
         run: mkdir publish
@@ -34,7 +30,12 @@ jobs:
           /p:PackageLocation="publish" `
           /p:AutoParameterizationWebConfigConnectionStrings=false `
           /p:DeleteExistingFiles=True
-          
+
+      - name: Listar contenido del directorio publish
+        run: |
+          Write-Host "Contenido del directorio publish:"
+          Get-ChildItem -Path publish -Recurse
+
       - name: Configurar AWS CLI
         run: |
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -43,12 +44,17 @@ jobs:
 
       - name: Transferir archivos a S3
         run: |
-          aws s3 cp publish/ s3://demo-api-deploy --recursive
-          
-      - name: Descargar archivos desde S3 a EC2       
+          if (Test-Path publish) {
+            aws s3 cp publish/ s3://demo-api-deploy --recursive
+          } else {
+            Write-Error "El directorio publish no existe"
+            exit 1
+          }
+
+      - name: Ejecutar comando en EC2 vía SSM
         run: |
           aws ssm send-command `
-            --instance-ids "i-0e38624bf58cdf959" `
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" `
             --document-name "AWS-RunPowerShellScript" `
             --parameters commands=["aws s3 cp s3://demo-api-deploy/ C:\inetpub\wwwroot\DemoApi\ --recursive"] `
             --output text
