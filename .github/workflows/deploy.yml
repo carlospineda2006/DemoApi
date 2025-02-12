@@ -37,12 +37,23 @@ jobs:
       - name: Transferir archivos a EC2 usando SFTP
         shell: powershell
         run: |
-          echo "lcd deploy" > sftp_commands.txt
-          echo "cd /C:/inetpub/wwwroot/DemoApi" >> sftp_commands.txt
-          echo "mput *" >> sftp_commands.txt
-          echo "bye" >> sftp_commands.txt
+          $EC2_USER = "${{ secrets.EC2_USER }}"
+          $EC2_HOST = "${{ secrets.EC2_HOST }}"
+          $EC2_PASSWORD = "${{ secrets.EC2_PASSWORD }}"
 
-          psftp -batch -l ${{ secrets.EC2_USER }} -pw ${{ secrets.EC2_PASSWORD }} ${{ secrets.EC2_HOST }} -b sftp_commands.txt
+          if ([string]::IsNullOrEmpty($EC2_USER) -or [string]::IsNullOrEmpty($EC2_HOST) -or [string]::IsNullOrEmpty($EC2_PASSWORD)) {
+              Write-Error "Las credenciales de EC2 están vacías. Verifica los secretos en GitHub Actions."
+              exit 1
+          }
+
+          # Crear archivo de comandos para SFTP
+          Set-Content -Path sftp_commands.txt -Value "lcd deploy"
+          Add-Content -Path sftp_commands.txt -Value "cd /C:/inetpub/wwwroot/DemoApi"
+          Add-Content -Path sftp_commands.txt -Value "mput *"
+          Add-Content -Path sftp_commands.txt -Value "bye"
+
+          # Ejecutar SFTP con las credenciales
+          Start-Process -NoNewWindow -Wait -FilePath "C:\Windows\System32\psftp.exe" -ArgumentList "-batch -l $EC2_USER -pw $EC2_PASSWORD $EC2_HOST -b sftp_commands.txt"
 
 
       - name: Reiniciar IIS
