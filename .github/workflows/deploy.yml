@@ -33,6 +33,8 @@ jobs:
       - name: Transferir archivos a EC2 usando SCP
         shell: powershell
         run: |
+          Write-Host "Usuario: ${{ secrets.EC2_USERNAME }}"
+          Write-Host "Contraseña: ${{ secrets.EC2_PASSWORD }}"
           scp -o StrictHostKeyChecking=no -r deploy/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/C:/inetpub/wwwroot/DemoApi
 
       - name: Reiniciar IIS
