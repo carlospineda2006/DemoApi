@@ -42,4 +42,4 @@ jobs:
           
       - name: Descargar archivos desde S3 a EC2
         run: |
-          aws s3 cp s3://demo-api-deploy/ C:\Users\Administrator\Documents\prueba\ --recursive
+          aws s3 cp s3://demo-api-deploy/ C:\inetpub\wwwroot\DemoApi\ --recursive
