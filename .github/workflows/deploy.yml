@@ -26,15 +26,13 @@ jobs:
           msbuild DemoApi.sln /p:Configuration=Release `
           /p:Platform="Any CPU" `
           /p:DeployOnBuild=true `
-          /p:WebPublishMethod=Package `
-          /p:PackageLocation="publish" `
-          /p:AutoParameterizationWebConfigConnectionStrings=false `
-          /p:DeleteExistingFiles=True
+          /p:WebPublishMethod=FileSystem `
+          /p:publishUrl="bin\Release\app.publish"
 
-      - name: Listar contenido del directorio publish
+      - name: Listar contenido del directorio de publicación
         run: |
-          Write-Host "Contenido del directorio publish:"
-          Get-ChildItem -Path publish -Recurse
+          Write-Host "Contenido del directorio de publicación:"
+          Get-ChildItem -Path "DemoApi\bin\Release\app.publish" -Recurse
 
       - name: Configurar AWS CLI
         run: |
@@ -44,7 +42,7 @@ jobs:
 
       - name: Transferir archivos a S3
         run: |
-            aws s3 cp publish/ s3://demo-api-deploy --recursive
+          aws s3 cp "DemoApi\bin\Release\app.publish\" s3://demo-api-deploy --recursive
  
       - name: Ejecutar comando en EC2 vía SSM
         run: |
