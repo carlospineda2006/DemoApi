@@ -37,6 +37,11 @@ jobs:
         shell: powershell
         run: |
           $EC2_HOST = "${{ secrets.EC2_HOST }}"
+
+          # Crear carpeta .ssh si no existe
+          if (!(Test-Path $SSH_DIR)) {
+              New-Item -ItemType Directory -Path $SSH_DIR | Out-Null
+          }
           
           # Obtener clave del servidor y agregarla a known_hosts
           ssh-keyscan -t ed25519 $EC2_HOST | Out-File -Encoding ASCII -FilePath $env:USERPROFILE\.ssh\known_hosts
