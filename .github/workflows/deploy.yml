@@ -22,13 +22,9 @@ jobs:
       - name: Compilar la solución
         run: msbuild DemoApi.sln /p:Configuration=Release /p:Platform="Any CPU" /v:diagnostic
 
-      - name: Verificar archivos generados
-        run: dir DemoApi\bin\Release\
-
-      - name: Publicar aplicación
+      - name: Compilar y publicar la solución
         run: |
-          mkdir deploy
-          Copy-Item -Path "DemoApi\bin\Release\*" -Destination "deploy\" -Recurse -Force
+          msbuild DemoApi.sln /p:Configuration=Release /p:Platform="Any CPU" /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:PublishUrl="./publish" /p:PrecompileBeforePublish=true /p:EnableUpdateable=false /t:Build,Publish /v:diagnostic
       
       - name: Configurar AWS CLI
         run: |
@@ -38,7 +34,7 @@ jobs:
 
       - name: Transferir archivos a S3
         run: |
-          aws s3 cp deploy/ s3://demo-api-deploy --recursive
+          aws s3 cp publish/ s3://demo-api-deploy --recursive
           
       - name: Descargar archivos desde S3 a EC2       
         run: |
