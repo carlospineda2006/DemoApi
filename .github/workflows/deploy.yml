@@ -25,52 +25,16 @@ jobs:
       - name: Verificar archivos generados
         run: dir DemoApi\bin\Release\
 
-      - name: Publicar aplicación
+      - name: Publicar aplicación 
         run: |
           mkdir deploy
           Copy-Item -Path "DemoApi\bin\Release\*" -Destination "deploy\" -Recurse -Force
 
-      - name: Instalar PuTTY (psftp.exe)
-        run: |
-          Invoke-WebRequest -Uri "https://the.earth.li/~sgtatham/putty/latest/w64/psftp.exe" -OutFile "C:\Windows\System32\psftp.exe"
-          
-      - name: Agregar clave del servidor a known_hosts
+      - name: Transferir archivos a EC2 usando SCP
         shell: powershell
         run: |
-          # Asegurarnos de que USERPROFILE esté definido
-          if (-not $env:USERPROFILE) {
-              Write-Error "USERPROFILE no está definido. Verifica el entorno."
-              exit 1
-          }
+          scp -o StrictHostKeyChecking=no -r deploy/* ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/C:/inetpub/wwwroot/DemoApi
 
-          $SSH_DIR = "$env:USERPROFILE\.ssh"
-          $KNOWN_HOSTS_FILE = "$SSH_DIR\known_hosts"
-          $EC2_HOST = "${{ secrets.EC2_HOST }}"
-          
-          # Crear carpeta .ssh si no existe
-          if (!(Test-Path $SSH_DIR)) {
-              Write-Host "Creando directorio: $SSH_DIR"
-              New-Item -ItemType Directory -Path $SSH_DIR | Out-Null
-          }
-
-          # Obtener clave del servidor y agregarla a known_hosts
-          Write-Host "Agregando clave de host de $EC2_HOST a known_hosts"
-          ssh-keyscan -t ed25519 $EC2_HOST | Out-File -Encoding ASCII -FilePath $KNOWN_HOSTS_FILE
-
-      - name: Transferir archivos a EC2 usando PowerShell SSH
-        shell: powershell
-        run: |
-          # Configurar las variables de conexión
-          $EC2_HOST = "${{ secrets.EC2_HOST }}"
-          $EC2_USER = "${{ secrets.EC2_USERNAME }}"
-          $EC2_PASSWORD = "${{ secrets.EC2_PASSWORD }}"
-          
-          # Comando SSH para reiniciar IIS
-          $script = "iisreset"
-          
-          # Ejecutar comando SSH, agregando -o StrictHostKeyChecking=no para evitar la confirmación de la clave
-          ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST $script
-          
       - name: Reiniciar IIS
         uses: appleboy/ssh-action@master
         with:
@@ -78,3 +42,4 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           password: ${{ secrets.EC2_PASSWORD }}
           script: iisreset
+ 
