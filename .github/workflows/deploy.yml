@@ -35,8 +35,8 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          echo "Clave configurada"
           cat ~/.ssh/id_rsa # Para verificar que la clave se configuró correctamente
-
           
       - name: Transferir archivos a EC2 usando SCP
         shell: powershell
