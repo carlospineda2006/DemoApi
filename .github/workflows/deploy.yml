@@ -18,15 +18,15 @@ jobs:
       - name: Restaurar paquetes NuGet
         run: nuget restore DemoApi.sln
 
-      - name: Crear directorio de publicación
-        run: mkdir publish
-
-      - name: Compilar y publicar la solución
+      - name: Publicar Web App
         run: |
-          msbuild DemoApi.sln /p:Configuration=Release `
+          msbuild DemoApi.sln `
+          /p:Configuration=Release `
           /p:Platform="Any CPU" `
           /p:DeployOnBuild=true `
           /p:WebPublishMethod=FileSystem `
+          /p:PublishProfile=FolderProfile `
+          /t:WebPublish `
           /p:publishUrl="bin\Release\app.publish"
 
       - name: Listar contenido del directorio de publicación
