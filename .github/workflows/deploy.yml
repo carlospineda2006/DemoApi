@@ -57,28 +57,20 @@ jobs:
           Write-Host "Agregando clave de host de $EC2_HOST a known_hosts"
           ssh-keyscan -t ed25519 $EC2_HOST | Out-File -Encoding ASCII -FilePath $KNOWN_HOSTS_FILE
 
-      - name: Transferir archivos a EC2 usando SFTP
+      - name: Transferir archivos a EC2 usando PowerShell SSH
         shell: powershell
         run: |
-          $EC2_USER = "${{ secrets.EC2_USERNAME }}"
+          # Configurar las variables de conexión
           $EC2_HOST = "${{ secrets.EC2_HOST }}"
+          $EC2_USER = "${{ secrets.EC2_USERNAME }}"
           $EC2_PASSWORD = "${{ secrets.EC2_PASSWORD }}"
-
-          if ([string]::IsNullOrEmpty($EC2_USER) -or [string]::IsNullOrEmpty($EC2_HOST) -or [string]::IsNullOrEmpty($EC2_PASSWORD)) {
-              Write-Error "Las credenciales de EC2 están vacías. Verifica los secretos en GitHub Actions."
-              exit 1
-          }
-
-          # Crear archivo de comandos para SFTP
-          Set-Content -Path sftp_commands.txt -Value "lcd deploy"
-          Add-Content -Path sftp_commands.txt -Value "cd /C:/inetpub/wwwroot/DemoApi"
-          Add-Content -Path sftp_commands.txt -Value "mput *"
-          Add-Content -Path sftp_commands.txt -Value "bye"
-
-          # Ejecutar SFTP con las credenciales
-          Start-Process -NoNewWindow -Wait -FilePath "C:\Windows\System32\psftp.exe" -ArgumentList "-batch -l $EC2_USER -pw $EC2_PASSWORD $EC2_HOST -b sftp_commands.txt"
-
-
+          
+          # Comando SSH para reiniciar IIS
+          $script = "iisreset"
+          
+          # Ejecutar comando SSH, agregando -o StrictHostKeyChecking=no para evitar la confirmación de la clave
+          ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST $script
+          
       - name: Reiniciar IIS
         uses: appleboy/ssh-action@master
         with:
