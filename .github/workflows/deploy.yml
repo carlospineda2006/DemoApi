@@ -22,10 +22,19 @@ jobs:
       - name: Compilar la solución
         run: msbuild DemoApi.sln /p:Configuration=Release /p:Platform="Any CPU" /v:diagnostic
 
+      - name: Crear directorio de publicación
+        run: mkdir publish
+
       - name: Compilar y publicar la solución
         run: |
-          msbuild DemoApi.sln /p:Configuration=Release /p:Platform="Any CPU" /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:PublishUrl="./publish" /p:PrecompileBeforePublish=true /p:EnableUpdateable=false /t:Build,Publish /v:diagnostic
-      
+          msbuild DemoApi.sln /p:Configuration=Release `
+          /p:Platform="Any CPU" `
+          /p:DeployOnBuild=true `
+          /p:WebPublishMethod=Package `
+          /p:PackageLocation="publish" `
+          /p:AutoParameterizationWebConfigConnectionStrings=false `
+          /p:DeleteExistingFiles=True
+          
       - name: Configurar AWS CLI
         run: |
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
