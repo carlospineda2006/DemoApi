@@ -20,13 +20,11 @@ jobs:
 
       - name: Publicar Web App
         run: |
-          msbuild DemoApi.sln `
+         msbuild DemoApi.sln `
           /p:Configuration=Release `
           /p:Platform="Any CPU" `
           /p:DeployOnBuild=true `
           /p:WebPublishMethod=FileSystem `
-          /p:PublishProfile=FolderProfile `
-          /t:WebPublish `
           /p:publishUrl="bin\Release\app.publish"
 
       - name: Listar contenido del directorio de publicación
