@@ -43,7 +43,7 @@ jobs:
       - name: Descargar archivos desde S3 a EC2       
         run: |
           aws ssm send-command `
-            --instance-ids "tu-instance-id" `
+            --instance-ids "i-0e38624bf58cdf959" `
             --document-name "AWS-RunPowerShellScript" `
             --parameters commands=["aws s3 cp s3://demo-api-deploy/ C:\inetpub\wwwroot\DemoApi\ --recursive"] `
             --output text
