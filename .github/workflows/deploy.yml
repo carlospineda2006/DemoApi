@@ -40,9 +40,8 @@ jobs:
         run: |
           aws s3 cp deploy/ s3://demo-api-deploy --recursive
           
-      - name: Descargar archivos desde S3 a EC2
+      - name: Descargar archivos desde S3 a EC2       
         run: |
-          run: |
           aws ssm send-command `
             --instance-ids "tu-instance-id" `
             --document-name "AWS-RunPowerShellScript" `
