@@ -29,13 +29,16 @@ jobs:
         run: |
           mkdir deploy
           Copy-Item -Path "DemoApi\bin\Release\*" -Destination "deploy\" -Recurse -Force
-
-      - name: Transferir archivos a EC2 usando SCP
-        shell: powershell
+      
+      - name: Configurar AWS CLI
         run: |
-          # Activar modo verbose para depuración
-          $ErrorActionPreference = "Stop"  # Asegura que se detenga en errores
-          scp -o "StrictHostKeyChecking=no" -v -r deploy/* ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/C:/inetpub/wwwroot/DemoApi
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region ${{ secrets.AWS_REGION }}
+
+      - name: Transferir archivos a S3
+        run: |
+          aws s3 cp deploy/ s3://demo-api-deploy --recursive
 
 
       - name: Reiniciar IIS
