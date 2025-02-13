@@ -30,7 +30,16 @@ jobs:
             /p:publishUrl="DemoApi\bin\Release\app.publish" `
             /p:PackageAsSingleFile=false
           echo "::set-output name=status::success"
-
+      - name: Transferir archivos a S3
+        run: |
+          aws s3 cp "DemoApi\obj\Release\Package\PackageTmp" s3://demo-api-deploy --recursive
+      - name: Deploy de S3 a EC2
+        run: |
+          aws ssm send-command `
+            --instance-ids ${{ secrets.EC2_INSTANCE_ID }} `
+            --document-name "AWS-RunPowerShellScript" `
+            --parameters commands=["aws s3 cp s3://demo-api-deploy/ C:\inetpub\wwwroot\DemoApi\ --recursive"] `
+            --output text
   prepare_aws:
     runs-on: windows-2019
     steps:
@@ -39,23 +48,3 @@ jobs:
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws configure set default.region ${{ secrets.AWS_REGION }}
-
-  upload_to_s3:
-    runs-on: windows-2019
-    needs: [build, prepare_aws]
-    steps:
-      - name: Transferir archivos a S3
-        run: |
-          aws s3 cp "DemoApi\obj\Release\Package\PackageTmp" s3://demo-api-deploy --recursive
-
-  deploy_to_ec2:
-    runs-on: windows-2019
-    needs: [upload_to_s3]
-    steps:
-      - name: Deploy de S3 a EC2
-        run: |
-          aws ssm send-command `
-            --instance-ids "i-0e38624bf58cdf959" `
-            --document-name "AWS-RunPowerShellScript" `
-            --parameters commands=["aws s3 cp s3://demo-api-deploy/ C:\inetpub\wwwroot\DemoApi\ --recursive"] `
-            --output text
