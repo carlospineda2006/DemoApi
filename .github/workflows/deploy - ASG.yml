@@ -44,6 +44,6 @@ jobs:
       - name: Desplegar con CodeDeploy
         run: |
           aws deploy create-deployment `
-            --application-name DemoApi `
+            --application-name DemoApiApp `
             --deployment-group-name DemoApiDeploymentGroup `
             --s3-location bucket=demo-api-deploy,key=deploy.zip,bundleType=zip
