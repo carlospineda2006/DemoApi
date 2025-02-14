@@ -37,7 +37,7 @@ jobs:
       - name: Crear archivo ZIP para CodeDeploy
         run: Compress-Archive -Path DemoApi\obj\Release\Package\PackageTmp\* -DestinationPath deploy.zip
         
-      - name: Subir artefacto a S3
+      - name: Transferir Deploy.zip a S3
         run: |
           aws s3 cp deploy.zip s3://demo-api-deploy/deploy.zip
        
