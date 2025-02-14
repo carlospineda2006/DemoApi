@@ -33,15 +33,17 @@ jobs:
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws configure set default.region ${{ secrets.AWS_REGION }}
-
-      - name: Transferir archivos a S3
+  
+      - name: Crear archivo ZIP para CodeDeploy
+        run: Compress-Archive -Path DemoApi\obj\Release\Package\PackageTmp\* -DestinationPath deploy.zip
+        
+      - name: Subir artefacto a S3
         run: |
-          aws s3 cp "DemoApi\obj\Release\Package\PackageTmp" s3://demo-api-deploy --recursive
- 
-      - name: Deploy de S3 a EC2
+          aws s3 cp deploy.zip s3://demo-api-deploy/deploy.zip
+       
+      - name: Desplegar con CodeDeploy
         run: |
-          aws ssm send-command `
-            --instance-ids ${{ secrets.EC2_INSTANCE_ID }} `
-            --document-name "AWS-RunPowerShellScript" `
-            --parameters commands=["aws s3 cp s3://demo-api-deploy/ C:\inetpub\wwwroot\DemoApi\ --recursive"] `
-            --output text
+          aws deploy create-deployment `
+            --application-name DemoApi `
+            --deployment-group-name DemoApiDeploymentGroup `
+            --s3-location bucket=demo-api-deploy,key=deploy.zip,bundleType=zip
