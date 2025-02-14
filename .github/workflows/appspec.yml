@@ -1,0 +1,10 @@
+version: 1.0
+os: windows
+files:
+  - source: /
+    destination: C:\inetpub\wwwroot\DemoApi
+hooks:
+  ApplicationStart:
+    - location: scripts/start_server.ps1
+      timeout: 300
+      runas: Administrator
