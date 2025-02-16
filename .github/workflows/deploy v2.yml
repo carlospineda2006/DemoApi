@@ -1,0 +1,68 @@
+name: Deploy .NET Framework to AWS EC2
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: windows-2019
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Configurar .NET Framework 4.8
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Restaurar paquetes NuGet
+        run: nuget restore DemoApi.sln
+
+      - name: Instalar SonarScanner para .NET
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Iniciar análisis con SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet sonarscanner begin /k:"carlospineda2006_DemoApi" `
+            /o:"carlospineda2006" `
+            /d:sonar.host.url="https://sonarcloud.io" `
+            /d:sonar.login="${{ secrets.SONAR_TOKEN }}" `
+            /d:sonar.cs.opencover.reportsPaths="DemoApi.Tests\coverage.opencover.xml"
+
+      - name: Compilar solución
+        run: msbuild DemoApi.sln /p:Configuration=Release /p:Platform="Any CPU"
+
+      - name: Finalizar análisis con SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+
+      - name: Publicar Web App
+        run: |
+          msbuild DemoApi.sln `
+            /p:Configuration=Release `
+            /p:Platform="Any CPU" `
+            /p:DeployOnBuild=true `
+            /p:WebPublishMethod=FileSystem `
+            /p:publishUrl="DemoApi\bin\Release\app.publish" `
+            /p:PackageAsSingleFile=false
+
+      - name: Configurar AWS CLI
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region ${{ secrets.AWS_REGION }}
+
+      - name: Transferir archivos a S3
+        run: |
+          aws s3 cp "DemoApi\obj\Release\Package\PackageTmp" s3://demo-api-deploy --recursive
+
+      - name: Deploy de S3 a EC2
+        run: |
+          aws ssm send-command `
+            --instance-ids ${{ secrets.EC2_INSTANCE_ID }} `
+            --document-name "AWS-RunPowerShellScript" `
+            --parameters commands=["aws s3 cp s3://demo-api-deploy/ C:\inetpub\wwwroot\DemoApi\ --recursive"] `
+            --output text
