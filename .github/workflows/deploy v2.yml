@@ -39,7 +39,10 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
-          if ($LASTEXITCODE -ne 0) { exit 1 }
+          if ($LASTEXITCODE -ne 0) {
+            echo "❌ Error: SonarCloud detectó problemas en el código. Corrige los errores antes de continuar."
+            exit 1
+          }
 
       - name: Publicar Web App
         run: |
