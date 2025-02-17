@@ -42,10 +42,10 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           dotnet sonarscanner begin /k:"carlospineda2006_DemoApi" 
-            /o:"carlospineda2006" 
-            /d:sonar.host.url="https://sonarcloud.io" 
-            /d:sonar.login="${{ secrets.SONAR_TOKEN }}" 
-            /d:sonar.cs.opencover.reportsPaths="DemoApi.Tests\coverage.opencover.xml"
+          /o:"carlospineda2006" 
+          /d:sonar.host.url="https://sonarcloud.io" 
+          /d:sonar.login="${{ secrets.SONAR_TOKEN }}" 
+          /d:sonar.cs.opencover.reportsPaths="DemoApi.Tests\coverage.opencover.xml"
 
       - name: Compilar solución
         run: msbuild DemoApi.sln /p:Configuration=Release /p:Platform="Any CPU"
@@ -110,5 +110,4 @@ jobs:
           if ($STATUS -ne "Succeeded") {
             Write-Output "El despliegue falló con estado: $STATUS"
             exit 1
-          }
-         
+          }       
