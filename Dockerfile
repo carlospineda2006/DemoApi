@@ -1,14 +1,10 @@
-# Imagen base con .NET Framework
-FROM mcr.microsoft.com/dotnet/framework/aspnet:4.8
+# Usar una imagen base de Windows con .NET Framework
+FROM mcr.microsoft.com/dotnet/framework/aspnet:4.8-windowsservercore-ltsc2019
 
-# Crear directorio para la aplicación
-WORKDIR /inetpub/wwwroot
-
-# Copiar archivos del proyecto
+# Copiar los archivos de la aplicación al contenedor
+WORKDIR /inetpub/wwwroot/DemoApi
 COPY . .
 
-# Exponer el puerto en el que corre la app
+# Exponer el puerto en el que la aplicación está corriendo
 EXPOSE 80
 
-# Comando de inicio
-CMD ["C:\\ServiceMonitor.exe", "w3svc"]
