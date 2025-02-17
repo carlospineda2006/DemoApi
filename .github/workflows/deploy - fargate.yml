@@ -1,15 +1,14 @@
-name: Deploy .NET Framework DemoApi to AWS Fargate
+name: Deploy .NET Framework DemoApi to AWS EC2
+
 on:
   push:
     branches:
       - master
-      #- main
 
 jobs:
   build:
     runs-on: windows-2019
     steps:
-
       - name: Configurar AWS CLI
         run: |
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -58,10 +57,10 @@ jobs:
       - name: Crear imagen Docker
         run: |
           docker build -t demo-api .
-      
+
       - name: Iniciar sesión en Amazon ECR
         run: |
-          aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-2.amazonaws.com
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
       - name: Etiquetar imagen Docker
         run: |
