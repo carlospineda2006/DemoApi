@@ -39,7 +39,13 @@ jobs:
         run: Copy-Item -Path appspec.yml -Destination DemoApi\obj\Release\Package\PackageTmp\appspec.yml
 
       - name: Copiar scripts a la carpeta de publicación
-        run: Copy-Item -Path scripts/appspec.yml -Destination DemoApi\obj\Release\Package\PackageTmp\appspec.yml
+        run: Copy-Item -Path scripts/before_install.ps1 -Destination DemoApi\obj\Release\Package\PackageTmp\scripts\before_install.ps1
+
+      - name: Copiar scripts a la carpeta de publicación
+        run: Copy-Item -Path scripts/after_install.ps1 -Destination DemoApi\obj\Release\Package\PackageTmp\scripts\after_install.ps1
+
+      - name: Copiar scripts a la carpeta de publicación
+        run: Copy-Item -Path scripts/start_server.ps1 -Destination DemoApi\obj\Release\Package\PackageTmp\scripts\start_server.ps1
 
       - name: Crear archivo ZIP para CodeDeploy
         run: Compress-Archive -Path DemoApi\obj\Release\Package\PackageTmp\* -DestinationPath deploy.zip
