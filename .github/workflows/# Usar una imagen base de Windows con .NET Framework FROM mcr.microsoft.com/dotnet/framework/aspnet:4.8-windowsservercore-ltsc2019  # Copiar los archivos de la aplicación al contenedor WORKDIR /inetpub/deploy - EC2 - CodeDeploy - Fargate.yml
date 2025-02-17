@@ -1,0 +1,96 @@
+name: Deploy .NET Framework DemoApi to AWS EC2
+
+on:
+  push:
+    branches:
+      - master
+      #- main
+
+jobs:
+  build:
+    runs-on: windows-2019
+    steps:
+
+      - name: Configurar AWS CLI
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region ${{ secrets.AWS_REGION }}
+
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Obtener secreto de AWS
+        uses: aws-actions/aws-secretsmanager-get-secrets@v1
+        with:
+          secret-ids: |
+            Demo-Api-Sonar-Organization
+          parse-json-secrets: true
+
+      - name: Configurar .NET Framework 4.8
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Restaurar paquetes NuGet
+        run: nuget restore DemoApi.sln
+
+      - name: Instalar SonarScanner para .NET
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Iniciar análisis con SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_ORG: ${{ env.DEMO_API_SONAR_ORGANIZATION_VALUE }}
+        run: |
+          dotnet sonarscanner begin /k:"carlospineda2006_DemoApi" /o:"${{ env.SONAR_ORG }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="DemoApi.Tests\coverage.opencover.xml"
+
+      - name: Compilar solución
+        run: msbuild DemoApi.sln /p:Configuration=Release /p:Platform="Any CPU"
+
+      - name: Finalizar análisis con SonarCloud
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+          if ($LASTEXITCODE -ne 0) {
+            echo "Error: SonarCloud detectó problemas en el código. Corrige los errores antes de continuar."
+            exit 1
+          }
+
+      - name: Crear imagen Docker
+        run: |
+          docker build -t demo-api .
+      
+      - name: Iniciar sesión en Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+
+      - name: Etiquetar imagen Docker
+        run: |
+          docker tag demo-api:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/demo-api:latest
+
+      - name: Empujar imagen Docker a ECR
+        run: |
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/demo-api:latest
+
+      - name: Actualizar servicio ECS con la nueva imagen
+        run: |
+          aws ecs update-service \
+            --cluster demo-api-cluster \
+            --service demo-api-service \
+            --task-definition demo-api-task \
+            --force-new-deployment
+
+      - name: Verificar estado de la actualización del servicio
+        run: |
+          while true; do
+            STATUS=$(aws ecs describe-services \
+              --cluster demo-api-cluster \
+              --services demo-api-service \
+              --query "services[0].deployments[0].status" \
+              --output text)
+            echo "Estado del despliegue: $STATUS"
+            if [ "$STATUS" == "PRIMARY" ]; then
+              break
+            fi
+            sleep 10
+          done
