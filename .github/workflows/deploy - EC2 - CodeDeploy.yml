@@ -137,5 +137,4 @@ jobs:
           if ($STATUS -ne "Succeeded") {
             Write-Output "El despliegue falló con estado: $STATUS"
             exit 1
-          }
-         
+          }  
