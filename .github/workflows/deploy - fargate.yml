@@ -68,7 +68,7 @@ jobs:
 
       - name: Empujar imagen Docker a ECR
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/demo-api:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/demo-api_repo:latest
 
       - name: Actualizar servicio ECS con la nueva imagen
         run: |
