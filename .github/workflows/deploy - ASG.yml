@@ -53,4 +53,20 @@ jobs:
 
           echo "Deployment ID: $DEPLOYMENT_ID"
           echo "DEPLOYMENT_ID=$DEPLOYMENT_ID" | Out-File -FilePath $env:GITHUB_ENV -A
+
+      - name: Verificar estado del despliegue
+        shell: pwsh
+        run: |
+          $STATUS = "InProgress"
+
+          while ($STATUS -eq "InProgress" -or $STATUS -eq "Created") {
+            $STATUS = aws deploy get-deployment --deployment-id $env:DEPLOYMENT_ID --query "deploymentInfo.status" --output text
+            Write-Output "Estado del despliegue: $STATUS"
+            Start-Sleep -Seconds 3
+          }
+
+          if ($STATUS -ne "Succeeded") {
+            Write-Output "El despliegue falló con estado: $STATUS"
+            exit 1
+          }
          
