@@ -28,18 +28,6 @@ jobs:
       #     $secretObj = $secretJson | ConvertFrom-Json
       #     echo "SONAR_TOKEN=$($secretObj.SONAR_TOKEN)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Obtener Sonar Token de AWS Secrets Manager
-        shell: pwsh
-        run: |
-          echo "Obteniendo Sonar Token desde AWS Secrets Manager..."
-          $secretJson = aws secretsmanager get-secret-value --secret-id DemoApi-Sonar-Token --query SecretString --output text
-          $secretObj = $secretJson | ConvertFrom-Json
-          $sonarToken = $secretObj.SONAR_TOKEN
-          
-          Write-Output "Sonar Token (completo): $sonarToken"
-
-          echo "SONAR_TOKEN=$sonarToken" | Out-File -FilePath $env:GITHUB_ENV -Append
-
       - name: Configurar .NET Framework 4.8
         uses: microsoft/setup-msbuild@v1
 
@@ -48,21 +36,6 @@ jobs:
 
       - name: Instalar SonarScanner para .NET
         run: dotnet tool install --global dotnet-sonarscanner
-
-      # - name: Iniciar análisis con SonarCloud
-      #   env:
-      #     SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
-      #   run: |
-      #     dotnet sonarscanner begin /k:"carlospineda2006_DemoApi" `
-      #       /o:"carlospineda2006" `
-      #       /d:sonar.host.url="https://sonarcloud.io" `
-      #       /d:sonar.login="$SONAR_TOKEN" `
-      #       /d:sonar.cs.opencover.reportsPaths="DemoApi.Tests\coverage.opencover.xml"
-
-      - name: Verificar Sonar Token
-        shell: pwsh
-        run: |
-            Write-Output "Sonar Token : ${{ secrets.SONAR_TOKEN }}"
 
       - name: Iniciar análisis con SonarCloud
         env:
@@ -137,4 +110,5 @@ jobs:
           if ($STATUS -ne "Succeeded") {
             Write-Output "El despliegue falló con estado: $STATUS"
             exit 1
-          }  
+          }
+         
