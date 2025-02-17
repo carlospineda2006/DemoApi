@@ -49,14 +49,29 @@ jobs:
       - name: Instalar SonarScanner para .NET
         run: dotnet tool install --global dotnet-sonarscanner
 
+      # - name: Iniciar análisis con SonarCloud
+      #   env:
+      #     SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+      #   run: |
+      #     dotnet sonarscanner begin /k:"carlospineda2006_DemoApi" `
+      #       /o:"carlospineda2006" `
+      #       /d:sonar.host.url="https://sonarcloud.io" `
+      #       /d:sonar.login="$SONAR_TOKEN" `
+      #       /d:sonar.cs.opencover.reportsPaths="DemoApi.Tests\coverage.opencover.xml"
+
+      - name: Verificar Sonar Token
+        shell: pwsh
+        run: |
+            Write-Output "Sonar Token : ${{ secrets.SONAR_TOKEN }}"
+
       - name: Iniciar análisis con SonarCloud
         env:
-          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          dotnet sonarscanner begin /k:"carlospineda2006_DemoApi" `
-            /o:"carlospineda2006" `
-            /d:sonar.host.url="https://sonarcloud.io" `
-            /d:sonar.login="$SONAR_TOKEN" `
+          dotnet sonarscanner begin /k:"carlospineda2006_DemoApi" 
+            /o:"carlospineda2006" 
+            /d:sonar.host.url="https://sonarcloud.io" 
+            /d:sonar.login="${{ secrets.SONAR_TOKEN }}" 
             /d:sonar.cs.opencover.reportsPaths="DemoApi.Tests\coverage.opencover.xml"
 
       - name: Compilar solución
