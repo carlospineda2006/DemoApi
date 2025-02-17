@@ -21,10 +21,12 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Obtener Sonar Token de AWS Secrets Manager
+        shell: pwsh
         run: |
           echo "Obteniendo Sonar Token desde AWS Secrets Manager..."
-          SONAR_TOKEN=$(aws secretsmanager get-secret-value --secret-id DemoApi-Sonar-Token --query SecretString --output text | jq -r '.SONAR_TOKEN')
-          echo "SONAR_TOKEN=${SONAR_TOKEN}" >> $GITHUB_ENV
+          $secretJson = aws secretsmanager get-secret-value --secret-id DemoApi-Sonar-Token --query SecretString --output text
+          $secretObj = $secretJson | ConvertFrom-Json
+          echo "SONAR_TOKEN=$($secretObj.SONAR_TOKEN)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Configurar .NET Framework 4.8
         uses: microsoft/setup-msbuild@v1
