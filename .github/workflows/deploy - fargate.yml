@@ -72,10 +72,10 @@ jobs:
 
       - name: Actualizar servicio ECS con la nueva imagen
         run: |
-          aws ecs update-service \
-            --cluster demo-api-cluster \
-            --service demo-api-service \
-            --task-definition demo-api-task- \
+          aws ecs update-service `
+            --cluster demo-api-cluster `
+            --service demo-api-service `
+            --task-definition task-demo-api- `
             --force-new-deployment
 
       - name: Verificar estado de la actualización del servicio
