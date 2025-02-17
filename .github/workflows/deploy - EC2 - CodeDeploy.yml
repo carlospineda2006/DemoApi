@@ -96,42 +96,17 @@ jobs:
         shell: pwsh
         run: |
           $STATUS = "InProgress"
-          $maxAttempts = 400 
+          $maxAttempts = 100  # Número máximo de intentos (5 minutos aproximadamente)
           $attempts = 0
           $waitSeconds = 3
-          $lastEventCount = 0
 
           while ($STATUS -eq "InProgress" -or $STATUS -eq "Created") {
             $attempts++
-            
-            # Obtener información detallada del despliegue
-            $deploymentInfo = aws deploy get-deployment --deployment-id $env:DEPLOYMENT_ID --query "deploymentInfo" --output json | ConvertFrom-Json
-            $STATUS = $deploymentInfo.status
-            
-            # Obtener los eventos del despliegue
-            $events = aws deploy get-deployment-target --deployment-id $env:DEPLOYMENT_ID --target-id $deploymentInfo.targetInstances[0].targetId --query "deploymentTarget.lifecycleEvents" --output json | ConvertFrom-Json
-            
-            # Mostrar solo eventos nuevos
-            if ($events.Count -gt $lastEventCount) {
-              Write-Output "`nIntento $attempts de $maxAttempts - Nuevos eventos detectados:"
-              for ($i = $lastEventCount; $i -lt $events.Count; $i++) {
-                $event = $events[$i]
-                Write-Output "----------------------------------------"
-                Write-Output "Lifecycle Event: $($event.lifecycleEventName)"
-                Write-Output "Status: $($event.status)"
-                Write-Output "Start Time: $($event.startTime)"
-                
-                if ($event.status -eq "Failed") {
-                  Write-Output "Diagnostic: $($event.diagnostics.message)"
-                  Write-Output "Script Name: $($event.diagnostics.scriptName)"
-                  Write-Output "Log Tail: $($event.diagnostics.logTail)"
-                }
-              }
-              $lastEventCount = $events.Count
-            }
+            $STATUS = aws deploy get-deployment --deployment-id $env:DEPLOYMENT_ID --query "deploymentInfo.status" --output text
+            Write-Output "Intento $attempts - Estado del despliegue: $STATUS"
             
             if ($attempts -ge $maxAttempts) {
-              Write-Output "`nTiempo de espera agotado después de $attempts intentos"
+              Write-Output "Tiempo de espera agotado después de $attempts intentos"
               exit 1
             }
             
@@ -139,14 +114,8 @@ jobs:
           }
 
           if ($STATUS -ne "Succeeded") {
-            Write-Output "`nEl despliegue falló con estado final: $STATUS"
-            Write-Output "Descripción: $($deploymentInfo.statusDescription)"
-            if ($deploymentInfo.errorInformation) {
-              Write-Output "Error Code: $($deploymentInfo.errorInformation.code)"
-              Write-Output "Error Message: $($deploymentInfo.errorInformation.message)"
-            }
+            Write-Output "El despliegue falló con estado: $STATUS"
             exit 1
           }
 
-          Write-Output "`nDespliegue completado exitosamente"
-          Write-Output "Tiempo total de despliegue: $($deploymentInfo.completeTime - $deploymentInfo.createTime)"
+          Write-Output "Despliegue completado exitosamente"
