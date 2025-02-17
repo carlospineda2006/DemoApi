@@ -52,58 +52,45 @@ jobs:
         run: |
           dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
           if ($LASTEXITCODE -ne 0) {
-            echo "❌ Error: SonarCloud detectó problemas en el código. Corrige los errores antes de continuar."
+            echo "Error: SonarCloud detectó problemas en el código. Corrige los errores antes de continuar."
             exit 1
           }
+
+      - name: Crear imagen Docker
+        run: |
+          docker build -t demo-api .
       
-      - name: Publicar Web App
+      - name: Iniciar sesión en Amazon ECR
         run: |
-          msbuild DemoApi.sln `
-            /p:Configuration=Release `
-            /p:Platform="Any CPU" `
-            /p:DeployOnBuild=true `
-            /p:WebPublishMethod=FileSystem `
-            /p:publishUrl="DemoApi\bin\Release\app.publish" `
-            /p:PackageAsSingleFile=false
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-      - name: Copiar archivos adicionales
+      - name: Etiquetar imagen Docker
         run: |
-          Copy-Item -Path appspec.yml -Destination DemoApi\obj\Release\Package\PackageTmp\appspec.yml
-          Copy-Item -Path scripts/before_install.ps1 -Destination DemoApi\obj\Release\Package\PackageTmp\scripts\before_install.ps1
-          Copy-Item -Path scripts/after_install.ps1 -Destination DemoApi\obj\Release\Package\PackageTmp\scripts\after_install.ps1
-          Copy-Item -Path scripts/start_server.ps1 -Destination DemoApi\obj\Release\Package\PackageTmp\scripts\start_server.ps1
-  
-      - name: Crear archivo ZIP para CodeDeploy
-        run: Compress-Archive -Path DemoApi\obj\Release\Package\PackageTmp\* -DestinationPath deploy.zip
-        
-      - name: Transferir Deploy.zip a S3
+          docker tag demo-api:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/demo-api:latest
+
+      - name: Empujar imagen Docker a ECR
         run: |
-          aws s3 cp deploy.zip s3://demo-api-deploy/deploy.zip
-       
-      - name: Desplegar con CodeDeploy
-        shell: pwsh
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/demo-api:latest
+
+      - name: Actualizar servicio ECS con la nueva imagen
         run: |
-          $DEPLOYMENT_ID = aws deploy create-deployment `
-            --application-name DemoApiApp `
-            --deployment-group-name DemoApiDeploymentGroup `
-            --s3-location bucket=demo-api-deploy,key=deploy.zip,bundleType=zip `
-            --query "deploymentId" --output text
+          aws ecs update-service \
+            --cluster demo-api-cluster \
+            --service demo-api-service \
+            --task-definition demo-api-task \
+            --force-new-deployment
 
-          echo "Deployment ID: $DEPLOYMENT_ID"
-          echo "DEPLOYMENT_ID=$DEPLOYMENT_ID" | Out-File -FilePath $env:GITHUB_ENV -A
-
-      - name: Verificar estado del despliegue
-        shell: pwsh
+      - name: Verificar estado de la actualización del servicio
         run: |
-          $STATUS = "InProgress"
-
-          while ($STATUS -eq "InProgress" -or $STATUS -eq "Created") {
-            $STATUS = aws deploy get-deployment --deployment-id $env:DEPLOYMENT_ID --query "deploymentInfo.status" --output text
-            Write-Output "Estado del despliegue: $STATUS"
-            Start-Sleep -Seconds 3
-          }
-
-          if ($STATUS -ne "Succeeded") {
-            Write-Output "El despliegue falló con estado: $STATUS"
-            exit 1
-          }       
+          while true; do
+            STATUS=$(aws ecs describe-services \
+              --cluster demo-api-cluster \
+              --services demo-api-service \
+              --query "services[0].deployments[0].status" \
+              --output text)
+            echo "Estado del despliegue: $STATUS"
+            if [ "$STATUS" == "PRIMARY" ]; then
+              break
+            fi
+            sleep 10
+          done
