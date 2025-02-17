@@ -43,9 +43,14 @@ jobs:
           aws s3 cp deploy.zip s3://demo-api-deploy/deploy.zip
        
       - name: Desplegar con CodeDeploy
+        shell: pwsh
         run: |
-          aws deploy create-deployment `
+          $DEPLOYMENT_ID = aws deploy create-deployment `
             --application-name DemoApiApp `
             --deployment-group-name DemoApiDeploymentGroup `
-            --s3-location bucket=demo-api-deploy,key=deploy.zip,bundleType=zip
+            --s3-location bucket=demo-api-deploy,key=deploy.zip,bundleType=zip `
+            --query "deploymentId" --output text
+
+          echo "Deployment ID: $DEPLOYMENT_ID"
+          echo "DEPLOYMENT_ID=$DEPLOYMENT_ID" | Out-File -FilePath $env:GITHUB_ENV -A
          
