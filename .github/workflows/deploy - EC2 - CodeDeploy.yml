@@ -1,4 +1,4 @@
-name: Deploy .NET Framework to AWS EC2
+name: Deploy .NET Framework DemoApi to AWS EC2
 
 on:
   push:
@@ -10,8 +10,22 @@ jobs:
   build:
     runs-on: windows-2019
     steps:
+
+      - name: Configurar AWS CLI
+        run: |
+          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws configure set default.region ${{ secrets.AWS_REGION }}
+
       - name: Checkout código
         uses: actions/checkout@v3
+
+      - name: Obtener Sonar Token desde AWS Secrets Manager
+        id: get_sonar_token
+        run: |
+          $SONAR_TOKEN = aws secretsmanager get-secret-value --secret-id DemoApi-Sonar-Token --query SecretString --output text
+          echo "::add-mask::$SONAR_TOKEN"
+          echo "SONAR_TOKEN=$SONAR_TOKEN" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Configurar .NET Framework 4.8
         uses: microsoft/setup-msbuild@v1
@@ -24,12 +38,12 @@ jobs:
 
       - name: Iniciar análisis con SonarCloud
         env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
         run: |
           dotnet sonarscanner begin /k:"carlospineda2006_DemoApi" `
             /o:"carlospineda2006" `
             /d:sonar.host.url="https://sonarcloud.io" `
-            /d:sonar.login="${{ secrets.SONAR_TOKEN }}" `
+            /d:sonar.login="$SONAR_TOKEN" `
             /d:sonar.cs.opencover.reportsPaths="DemoApi.Tests\coverage.opencover.xml"
 
       - name: Compilar solución
@@ -55,19 +69,13 @@ jobs:
             /p:publishUrl="DemoApi\bin\Release\app.publish" `
             /p:PackageAsSingleFile=false
 
-      - name: Configurar AWS CLI
-        run: |
-          aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws configure set default.region ${{ secrets.AWS_REGION }}
-  
       - name: Copiar archivos adicionales
         run: |
           Copy-Item -Path appspec.yml -Destination DemoApi\obj\Release\Package\PackageTmp\appspec.yml
           Copy-Item -Path scripts/before_install.ps1 -Destination DemoApi\obj\Release\Package\PackageTmp\scripts\before_install.ps1
           Copy-Item -Path scripts/after_install.ps1 -Destination DemoApi\obj\Release\Package\PackageTmp\scripts\after_install.ps1
           Copy-Item -Path scripts/start_server.ps1 -Destination DemoApi\obj\Release\Package\PackageTmp\scripts\start_server.ps1
-
+  
       - name: Crear archivo ZIP para CodeDeploy
         run: Compress-Archive -Path DemoApi\obj\Release\Package\PackageTmp\* -DestinationPath deploy.zip
         
