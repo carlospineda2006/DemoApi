@@ -75,7 +75,7 @@ jobs:
           aws ecs update-service \
             --cluster demo-api-cluster \
             --service demo-api-service \
-            --task-definition demo-api-task \
+            --task-definition demo-api-task- \
             --force-new-deployment
 
       - name: Verificar estado de la actualización del servicio
