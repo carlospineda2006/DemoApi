@@ -83,7 +83,7 @@ jobs:
           while ($true) {
             $STATUS = aws ecs describe-services `
               --cluster demo-api-cluster `
-              --services demo-api-service `
+              --services ECS-service-demo-api `
               --query "services[0].deployments[0].status" `
               --output text
             echo "Estado del despliegue: $STATUS"
