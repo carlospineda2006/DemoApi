@@ -44,8 +44,8 @@ jobs:
        
       - name: Desplegar con CodeDeploy
         run: |
-          DEPLOYMENT_ID=$(aws deploy create-deployment `
+          aws deploy create-deployment `
             --application-name DemoApiApp `
             --deployment-group-name DemoApiDeploymentGroup `
-            --s3-location bucket=demo-api-deploy,key=deploy.zip,bundleType=zip)
-            echo "DEPLOYMENT_ID=$DEPLOYMENT_ID"
+            --s3-location bucket=demo-api-deploy,key=deploy.zip,bundleType=zip
+         
