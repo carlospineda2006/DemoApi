@@ -35,6 +35,9 @@ jobs:
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws configure set default.region ${{ secrets.AWS_REGION }}
   
+      - name: Copiar appspec.yml a la carpeta de publicación
+        run: Copy-Item -Path appspec.yml -Destination DemoApi\obj\Release\Package\PackageTmp\appspec.yml
+
       - name: Crear archivo ZIP para CodeDeploy
         run: Compress-Archive -Path DemoApi\obj\Release\Package\PackageTmp\* -DestinationPath deploy.zip
         
