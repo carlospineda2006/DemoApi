@@ -24,7 +24,7 @@ jobs:
         uses: aws-actions/aws-secretsmanager-get-secrets@v1
         with:
           secret-ids: |
-            sonar_org, Demo-Api-Sonar-Organization
+            Demo-Api-Sonar-Organization
           parse-json-secrets: true
 
       - name: Configurar .NET Framework 4.8
@@ -39,7 +39,7 @@ jobs:
       - name: Iniciar análisis con SonarCloud
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_ORG: ${{ env.SONAR_ORG_VALUE }}
+          SONAR_ORG: ${{ env.DEMO_API_SONAR_ORGANIZATION_VALUE }}
         run: |
           dotnet sonarscanner begin /k:"carlospineda2006_DemoApi" /o:"${{ env.SONAR_ORG }}" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.login="${{ secrets.SONAR_TOKEN }}" /d:sonar.cs.opencover.reportsPaths="DemoApi.Tests\coverage.opencover.xml"
 
