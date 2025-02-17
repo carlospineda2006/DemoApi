@@ -3,8 +3,8 @@ name: Deploy .NET Framework DemoApi to AWS EC2
 on:
   push:
     branches:
-      #- master
-      - main
+      - master
+      #- main
 
 jobs:
   build:
