@@ -74,7 +74,7 @@ jobs:
         run: |
           aws ecs update-service `
             --cluster demo-api-cluster `
-            --service demo-api-service `
+            --service ECS-service-demo-api `
             --task-definition task-demo-api- `
             --force-new-deployment
 
