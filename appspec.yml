@@ -4,6 +4,14 @@ files:
   - source: /
     destination: C:\inetpub\wwwroot\DemoApi
 hooks:
+  BeforeInstall:
+    - location: scripts/before_install.ps1
+      timeout: 300
+      runas: Administrator
+  AfterInstall:
+    - location: scripts/after_install.ps1
+      timeout: 300
+      runas: Administrator
   ApplicationStart:
     - location: scripts/start_server.ps1
       timeout: 300

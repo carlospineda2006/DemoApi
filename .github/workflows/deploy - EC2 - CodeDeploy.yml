@@ -38,6 +38,9 @@ jobs:
       - name: Copiar appspec.yml a la carpeta de publicación
         run: Copy-Item -Path appspec.yml -Destination DemoApi\obj\Release\Package\PackageTmp\appspec.yml
 
+      - name: Copiar scripts a la carpeta de publicación
+        run: Copy-Item -Path scripts/appspec.yml -Destination DemoApi\obj\Release\Package\PackageTmp\appspec.yml
+
       - name: Crear archivo ZIP para CodeDeploy
         run: Compress-Archive -Path DemoApi\obj\Release\Package\PackageTmp\* -DestinationPath deploy.zip
         
